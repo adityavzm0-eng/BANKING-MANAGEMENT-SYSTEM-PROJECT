@@ -1,550 +1,1451 @@
+-- ============================================================
+-- PROJECT     : BANKING MANAGEMENT SYSTEM
+-- DATABASE    : MySQL
+-- TABLES      : 15
+-- QUERY TOPICS: 14 (5 queries each = 70 queries)
+-- ============================================================
+
 DROP DATABASE IF EXISTS banking_system;
 CREATE DATABASE banking_system;
 USE banking_system;
 
 -- ============================================================
--- SECTION 1: TABLE CREATION (10 TABLES)
+-- SECTION 1: TABLE CREATION (15 TABLES)
 -- ============================================================
 
--- 1. BRANCHES
-CREATE TABLE branches (
-    branch_id     INT PRIMARY KEY AUTO_INCREMENT,
-    branch_name   VARCHAR(100) NOT NULL,
-    city          VARCHAR(50),
-    state         VARCHAR(50),
-    ifsc_code     VARCHAR(15) UNIQUE,
-    manager_name  VARCHAR(100),
-    phone         VARCHAR(15)
+-- 1. Branches
+CREATE TABLE Branches (
+    branch_id INT PRIMARY KEY AUTO_INCREMENT,
+    branch_name VARCHAR(100) NOT NULL,
+    branch_city VARCHAR(50) NOT NULL,
+    ifsc_code VARCHAR(15) UNIQUE NOT NULL
 );
 
--- 2. EMPLOYEES
-CREATE TABLE employees (
-    employee_id   INT PRIMARY KEY AUTO_INCREMENT,
-    first_name    VARCHAR(50),
-    last_name     VARCHAR(50),
-    branch_id     INT,
-    designation   VARCHAR(50),
-    salary        DECIMAL(10,2),
-    hire_date     DATE,
-    email         VARCHAR(100),
-    phone         VARCHAR(15),
-    FOREIGN KEY (branch_id) REFERENCES branches(branch_id)
+-- 2. Departments
+CREATE TABLE Departments (
+    department_id INT PRIMARY KEY AUTO_INCREMENT,
+    department_name VARCHAR(50) NOT NULL
 );
 
--- 3. CUSTOMERS
-CREATE TABLE customers (
-    customer_id   INT PRIMARY KEY AUTO_INCREMENT,
-    first_name    VARCHAR(50),
-    last_name     VARCHAR(50),
-    dob           DATE,
-    gender        VARCHAR(10),
-    city          VARCHAR(50),
-    state         VARCHAR(50),
-    phone         VARCHAR(15),
-    email         VARCHAR(100),
-    pan_number    VARCHAR(15) UNIQUE,
-    created_date  DATE
+-- 3. Employees
+CREATE TABLE Employees (
+    employee_id INT PRIMARY KEY AUTO_INCREMENT,
+    emp_name VARCHAR(100) NOT NULL,
+    department_id INT,
+    branch_id INT,
+    designation VARCHAR(50),
+    salary DECIMAL(10,2),
+    hire_date DATE,
+    FOREIGN KEY (department_id) REFERENCES Departments(department_id),
+    FOREIGN KEY (branch_id) REFERENCES Branches(branch_id)
 );
 
--- 4. ACCOUNT TYPES
-CREATE TABLE account_types (
+-- 4. Customers
+CREATE TABLE Customers (
+    customer_id INT PRIMARY KEY AUTO_INCREMENT,
+    cust_name VARCHAR(100) NOT NULL,
+    dob DATE,
+    gender VARCHAR(10),
+    phone VARCHAR(15),
+    email VARCHAR(100),
+    address VARCHAR(200),
+    city VARCHAR(50),
+    branch_id INT,
+    FOREIGN KEY (branch_id) REFERENCES Branches(branch_id)
+);
+
+-- 5. AccountTypes
+CREATE TABLE AccountTypes (
     account_type_id INT PRIMARY KEY AUTO_INCREMENT,
-    type_name       VARCHAR(60),
-    interest_rate   DECIMAL(5,2),
-    min_balance     DECIMAL(10,2)
+    type_name VARCHAR(50) NOT NULL,
+    interest_rate DECIMAL(5,2),
+    min_balance DECIMAL(10,2)
 );
 
--- 5. ACCOUNTS
-CREATE TABLE accounts (
-    account_id      INT PRIMARY KEY AUTO_INCREMENT,
-    customer_id     INT,
-    branch_id       INT,
+-- 6. Accounts
+CREATE TABLE Accounts (
+    account_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    branch_id INT,
     account_type_id INT,
-    account_number  VARCHAR(20) UNIQUE,
-    balance         DECIMAL(12,2) DEFAULT 0,
-    status          VARCHAR(15) DEFAULT 'ACTIVE',
-    opened_date     DATE,
-    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
-    FOREIGN KEY (branch_id) REFERENCES branches(branch_id),
-    FOREIGN KEY (account_type_id) REFERENCES account_types(account_type_id)
+    account_number VARCHAR(20) UNIQUE NOT NULL,
+    balance DECIMAL(12,2) DEFAULT 0,
+    open_date DATE,
+    status VARCHAR(20) DEFAULT 'Active',
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+    FOREIGN KEY (branch_id) REFERENCES Branches(branch_id),
+    FOREIGN KEY (account_type_id) REFERENCES AccountTypes(account_type_id)
 );
 
--- 6. TRANSACTIONS
-CREATE TABLE transactions (
-    transaction_id   INT PRIMARY KEY AUTO_INCREMENT,
-    account_id       INT,
-    transaction_type VARCHAR(15),   -- DEPOSIT, WITHDRAWAL
-    amount           DECIMAL(12,2),
+-- 7. Transactions
+CREATE TABLE Transactions (
+    transaction_id INT PRIMARY KEY AUTO_INCREMENT,
+    account_id INT,
+    transaction_type VARCHAR(20),
+    amount DECIMAL(12,2),
     transaction_date DATETIME,
-    description      VARCHAR(150),
-    balance_after    DECIMAL(12,2),
-    FOREIGN KEY (account_id) REFERENCES accounts(account_id)
+    description VARCHAR(200),
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id)
 );
 
--- 7. LOAN TYPES
-CREATE TABLE loan_types (
-    loan_type_id      INT PRIMARY KEY AUTO_INCREMENT,
-    loan_name         VARCHAR(60),
-    interest_rate     DECIMAL(5,2),
-    max_amount        DECIMAL(12,2),
-    max_tenure_months INT
+-- 8. Cards
+CREATE TABLE Cards (
+    card_id INT PRIMARY KEY AUTO_INCREMENT,
+    account_id INT,
+    card_number VARCHAR(20),
+    card_type VARCHAR(20),
+    expiry_date DATE,
+    card_status VARCHAR(20) DEFAULT 'Active',
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id)
 );
 
--- 8. LOANS
-CREATE TABLE loans (
-    loan_id           INT PRIMARY KEY AUTO_INCREMENT,
-    customer_id       INT,
-    loan_type_id      INT,
-    branch_id         INT,
-    principal_amount  DECIMAL(12,2),
-    interest_rate     DECIMAL(5,2),
-    tenure_months     INT,
-    emi_amount        DECIMAL(10,2),
-    start_date        DATE,
-    status            VARCHAR(15),
-    FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
-    FOREIGN KEY (loan_type_id) REFERENCES loan_types(loan_type_id),
-    FOREIGN KEY (branch_id) REFERENCES branches(branch_id)
+-- 9. LoanTypes
+CREATE TABLE LoanTypes (
+    loan_type_id INT PRIMARY KEY AUTO_INCREMENT,
+    loan_name VARCHAR(50),
+    interest_rate DECIMAL(5,2)
 );
 
--- 9. LOAN PAYMENTS
-CREATE TABLE loan_payments (
-    payment_id           INT PRIMARY KEY AUTO_INCREMENT,
-    loan_id              INT,
-    payment_date         DATE,
-    amount_paid          DECIMAL(10,2),
-    principal_component  DECIMAL(10,2),
-    interest_component   DECIMAL(10,2),
-    payment_status       VARCHAR(15),
-    FOREIGN KEY (loan_id) REFERENCES loans(loan_id)
+-- 10. Loans
+CREATE TABLE Loans (
+    loan_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    loan_type_id INT,
+    branch_id INT,
+    loan_amount DECIMAL(12,2),
+    issue_date DATE,
+    tenure_months INT,
+    status VARCHAR(20) DEFAULT 'Active',
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+    FOREIGN KEY (loan_type_id) REFERENCES LoanTypes(loan_type_id),
+    FOREIGN KEY (branch_id) REFERENCES Branches(branch_id)
 );
 
--- 10. BALANCE HISTORY
-CREATE TABLE balance_history (
-    history_id       INT PRIMARY KEY AUTO_INCREMENT,
-    account_id       INT,
-    balance_date     DATE,
-    opening_balance  DECIMAL(12,2),
-    closing_balance  DECIMAL(12,2),
-    FOREIGN KEY (account_id) REFERENCES accounts(account_id)
+-- 11. LoanPayments
+CREATE TABLE LoanPayments (
+    payment_id INT PRIMARY KEY AUTO_INCREMENT,
+    loan_id INT,
+    payment_date DATE,
+    amount_paid DECIMAL(10,2),
+    FOREIGN KEY (loan_id) REFERENCES Loans(loan_id)
 );
 
+-- 12. FixedDeposits
+CREATE TABLE FixedDeposits (
+    fd_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    account_id INT,
+    amount DECIMAL(12,2),
+    start_date DATE,
+    maturity_date DATE,
+    interest_rate DECIMAL(5,2),
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id)
+);
+
+-- 13. Beneficiaries
+CREATE TABLE Beneficiaries (
+    beneficiary_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    beneficiary_name VARCHAR(100),
+    beneficiary_account_number VARCHAR(20),
+    bank_name VARCHAR(100),
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+);
+
+-- 14. Cheques
+CREATE TABLE Cheques (
+    cheque_id INT PRIMARY KEY AUTO_INCREMENT,
+    account_id INT,
+    cheque_number VARCHAR(20),
+    issue_date DATE,
+    amount DECIMAL(12,2),
+    status VARCHAR(20) DEFAULT 'Pending',
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id)
+);
+
+-- 15. Nominees
+CREATE TABLE Nominees (
+    nominee_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    nominee_name VARCHAR(100),
+    relation VARCHAR(50),
+    dob DATE,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+);
 
 -- ============================================================
--- SECTION 2: INSERT DATA (20 ROWS PER TABLE)
+-- SECTION 2: SAMPLE DATA
 -- ============================================================
 
--- ---------- 1. BRANCHES (20 rows) ----------
-INSERT INTO branches (branch_name, city, state, ifsc_code, manager_name, phone) VALUES
-('Chennai Main','Chennai','Tamil Nadu','BANK0001','Ravi Kumar','9840011001'),
-('T Nagar Branch','Chennai','Tamil Nadu','BANK0002','Lakshmi Narayan','9840011002'),
-('Anna Nagar Branch','Chennai','Tamil Nadu','BANK0003','Suresh Babu','9840011003'),
-('Mumbai Fort','Mumbai','Maharashtra','BANK0004','Anita Shah','9820011004'),
-('Andheri Branch','Mumbai','Maharashtra','BANK0005','Rohit Mehta','9820011005'),
-('Connaught Place','Delhi','Delhi','BANK0006','Vikram Sethi','9810011006'),
-('Karol Bagh Branch','Delhi','Delhi','BANK0007','Pooja Arora','9810011007'),
-('MG Road Branch','Bangalore','Karnataka','BANK0008','Karthik Rao','9900011008'),
-('Whitefield Branch','Bangalore','Karnataka','BANK0009','Deepa Iyer','9900011009'),
-('Banjara Hills','Hyderabad','Telangana','BANK0010','Srinivas Reddy','9940011010'),
-('Park Street','Kolkata','West Bengal','BANK0011','Soumya Banerjee','9830011011'),
-('Salt Lake Branch','Kolkata','West Bengal','BANK0012','Arijit Das','9830011012'),
-('Pune Camp','Pune','Maharashtra','BANK0013','Sanjay Patil','9860011013'),
-('Hinjewadi Branch','Pune','Maharashtra','BANK0014','Neha Joshi','9860011014'),
-('Navrangpura','Ahmedabad','Gujarat','BANK0015','Kiran Patel','9870011015'),
-('Malviya Nagar','Jaipur','Rajasthan','BANK0016','Rajendra Singh','9950011016'),
-('Hazratganj Branch','Lucknow','Uttar Pradesh','BANK0017','Anil Verma','9950011017'),
-('Civil Lines','Kanpur','Uttar Pradesh','BANK0018','Manoj Tiwari','9950011018'),
-('RS Puram','Coimbatore','Tamil Nadu','BANK0019','Meena Subramaniam','9840011019'),
-('Edappally','Kochi','Kerala','BANK0020','Thomas Jacob','9940011020');
+INSERT INTO Branches (branch_name, branch_city, ifsc_code) VALUES
+('Anna Nagar Branch','Chennai','BANK0001'),
+('T Nagar Branch','Chennai','BANK0002'),
+('Andheri Branch','Mumbai','BANK0003'),
+('Koramangala Branch','Bangalore','BANK0004'),
+('Salt Lake Branch','Kolkata','BANK0005');
 
--- ---------- 2. EMPLOYEES (20 rows) ----------
-INSERT INTO employees (first_name, last_name, branch_id, designation, salary, hire_date, email, phone) VALUES
-('Arun','Prakash',1,'Branch Manager',85000,'2015-03-12','arun.prakash@bank.com','9001000001'),
-('Divya','Shankar',1,'Loan Officer',52000,'2018-06-23','divya.shankar@bank.com','9001000002'),
-('Ramesh','Iyer',2,'Cashier',32000,'2019-01-15','ramesh.iyer@bank.com','9001000003'),
-('Priya','Venkat',2,'Clerk',28000,'2020-09-09','priya.venkat@bank.com','9001000004'),
-('Suresh','Kumar',3,'Branch Manager',86000,'2014-11-02','suresh.kumar@bank.com','9001000005'),
-('Anjali','Menon',3,'Teller',30000,'2021-02-18','anjali.menon@bank.com','9001000006'),
-('Vivek','Nair',4,'Branch Manager',90000,'2013-07-21','vivek.nair@bank.com','9001000007'),
-('Sneha','Joshi',4,'Loan Officer',54000,'2017-05-30','sneha.joshi@bank.com','9001000008'),
-('Rahul','Deshmukh',5,'Cashier',31000,'2019-08-14','rahul.deshmukh@bank.com','9001000009'),
-('Kavya','Reddy',5,'Clerk',27500,'2022-03-03','kavya.reddy@bank.com','9001000010'),
-('Manish','Gupta',6,'Branch Manager',88000,'2014-04-19','manish.gupta@bank.com','9001000011'),
-('Ritu','Sharma',6,'Teller',29500,'2020-12-01','ritu.sharma@bank.com','9001000012'),
-('Aditya','Verma',7,'Loan Officer',53000,'2018-10-10','aditya.verma@bank.com','9001000013'),
-('Pallavi','Singh',7,'Clerk',28000,'2021-07-07','pallavi.singh@bank.com','9001000014'),
-('Karthik','Subramani',8,'Branch Manager',87000,'2015-09-25','karthik.s@bank.com','9001000015'),
-('Swathi','Rao',8,'Cashier',31500,'2019-11-11','swathi.rao@bank.com','9001000016'),
-('Naveen','Kumar',9,'Teller',30500,'2020-05-05','naveen.kumar@bank.com','9001000017'),
-('Harini','Krishnan',9,'Clerk',27000,'2022-01-20','harini.k@bank.com','9001000018'),
-('Mahesh','Reddy',10,'Branch Manager',89000,'2013-12-12','mahesh.reddy@bank.com','9001000019'),
-('Lavanya','Prasad',10,'Loan Officer',52500,'2017-08-08','lavanya.p@bank.com','9001000020');
+INSERT INTO Departments (department_name) VALUES
+('Loans'),('Customer Service'),('Operations'),('IT'),('HR');
 
--- ---------- 3. CUSTOMERS (20 rows) ----------
-INSERT INTO customers (first_name, last_name, dob, gender, city, state, phone, email, pan_number, created_date) VALUES
-('Aarav','Sharma','1990-05-12','Male','Chennai','Tamil Nadu','9123456701','aarav.sharma@mail.com','ABCDE1234A','2018-01-10'),
-('Diya','Patel','1992-08-21','Female','Mumbai','Maharashtra','9123456702','diya.patel@mail.com','ABCDE1235B','2018-02-15'),
-('Vihaan','Reddy','1988-11-03','Male','Bangalore','Karnataka','9123456703','vihaan.reddy@mail.com','ABCDE1236C','2018-03-20'),
-('Ananya','Iyer','1995-02-17','Female','Chennai','Tamil Nadu','9123456704','ananya.iyer@mail.com','ABCDE1237D','2018-04-05'),
-('Arjun','Singh','1985-07-29','Male','Delhi','Delhi','9123456705','arjun.singh@mail.com','ABCDE1238E','2018-05-12'),
-('Ishaan','Mehta','1993-09-09','Male','Mumbai','Maharashtra','9123456706','ishaan.mehta@mail.com','ABCDE1239F','2018-06-18'),
-('Saanvi','Nair','1991-12-25','Female','Hyderabad','Telangana','9123456707','saanvi.nair@mail.com','ABCDE1240G','2018-07-22'),
-('Aditi','Banerjee','1989-04-14','Female','Kolkata','West Bengal','9123456708','aditi.banerjee@mail.com','ABCDE1241H','2018-08-30'),
-('Krishna','Rao','1994-06-06','Male','Pune','Maharashtra','9123456709','krishna.rao@mail.com','ABCDE1242I','2018-09-09'),
-('Meera','Joshi','1996-01-19','Female','Pune','Maharashtra','9123456710','meera.joshi@mail.com','ABCDE1243J','2018-10-14'),
-('Rohan','Patel','1987-03-23','Male','Ahmedabad','Gujarat','9123456711','rohan.patel@mail.com','ABCDE1244K','2018-11-20'),
-('Kavya','Singh','1992-10-10','Female','Jaipur','Rajasthan','9123456712','kavya.singh@mail.com','ABCDE1245L','2018-12-25'),
-('Rohit','Verma','1990-02-28','Male','Lucknow','Uttar Pradesh','9123456713','rohit.verma@mail.com','ABCDE1246M','2019-01-15'),
-('Pooja','Tiwari','1993-05-05','Female','Kanpur','Uttar Pradesh','9123456714','pooja.tiwari@mail.com','ABCDE1247N','2019-02-20'),
-('Dev','Subramaniam','1994-07-07','Male','Coimbatore','Tamil Nadu','9123456715','dev.subramaniam@mail.com','ABCDE1248O','2019-03-25'),
-('Joel','Thomas','1987-12-02','Male','Kochi','Kerala','9123456716','joel.thomas@mail.com','ABCDE1249P','2019-04-30'),
-('Vikram','Nathan','1988-01-27','Male','Chennai','Tamil Nadu','9123456717','vikram.nathan@mail.com','ABCDE1250Q','2019-05-10'),
-('Sanjana','Rao','1993-08-16','Female','Bangalore','Karnataka','9123456718','sanjana.rao@mail.com','ABCDE1251R','2019-06-18'),
-('Yash','Malhotra','1991-02-09','Male','Delhi','Delhi','9123456719','yash.malhotra@mail.com','ABCDE1252S','2019-07-22'),
-('Tara','Khanna','1996-10-30','Female','Mumbai','Maharashtra','9123456720','tara.khanna@mail.com','ABCDE1253T','2019-08-28');
+INSERT INTO Employees (emp_name, department_id, branch_id, designation, salary, hire_date) VALUES
+('Arun Kumar',1,1,'Loan Officer',45000,'2019-05-10'),
+('Divya Shree',2,1,'Teller',30000,'2020-01-15'),
+('Rahul Mehta',3,3,'Operations Manager',60000,'2018-03-20'),
+('Priya Singh',4,4,'IT Support',40000,'2021-07-01'),
+('Kavitha Rao',2,2,'Customer Rep',32000,'2020-11-11'),
+('Suresh Babu',1,3,'Loan Officer',47000,'2017-09-09'),
+('Anitha Menon',5,4,'HR Executive',38000,'2022-02-14');
 
--- ---------- 4. ACCOUNT TYPES (20 rows) ----------
-INSERT INTO account_types (type_name, interest_rate, min_balance) VALUES
-('Savings Regular',3.50,1000),
-('Savings Premium',4.00,5000),
-('Savings Senior Citizen',4.50,1000),
-('Savings Women Special',4.00,2000),
-('Savings Student',3.00,0),
-('Savings Salary',3.50,0),
-('Current Basic',0.00,5000),
-('Current Premium',0.00,25000),
-('Current Business',0.00,50000),
-('Current Corporate',0.00,100000),
-('Fixed Deposit 1Yr',6.50,10000),
-('Fixed Deposit 2Yr',6.75,10000),
-('Fixed Deposit 3Yr',7.00,10000),
-('Fixed Deposit 5Yr',7.25,10000),
-('Recurring Deposit',6.00,500),
-('NRI Savings',3.75,10000),
-('NRI Current',0.00,50000),
-('Zero Balance Savings',3.00,0),
-('Pension Savings',4.25,0),
-('Minor Savings',3.00,500);
+INSERT INTO Customers (cust_name, dob, gender, phone, email, address, city, branch_id) VALUES
+('Ramesh Iyer','1985-04-12','Male','9876543210','ramesh@mail.com','12 Gandhi St','Chennai',1),
+('Sneha Patil','1990-08-25','Female','9876543211','sneha@mail.com','45 MG Road','Mumbai',3),
+('Vikram Rao','1978-11-02','Male','9876543212','vikram@mail.com','7 Park Ave','Bangalore',4),
+('Lakshmi Narayanan','1995-01-30','Female','9876543213','lakshmi@mail.com','9 Lake View','Kolkata',5),
+('Arjun Das','1988-06-18','Male','9876543214','arjun@mail.com','23 Church St','Chennai',2),
+('Meera Nair','1992-09-09','Female','9876543215','meera@mail.com','56 Hill Road','Mumbai',3),
+('Kiran Kumar','1983-03-03','Male','9876543216','kiran@mail.com','3 Lake Town','Kolkata',5),
+('Divya Bharathi','1997-12-20','Female','9876543217','divyab@mail.com','88 Anna Salai','Chennai',1);
 
--- ---------- 5. ACCOUNTS (20 rows) ----------
-INSERT INTO accounts (customer_id, branch_id, account_type_id, account_number, balance, status, opened_date) VALUES
-(1,1,1,'AC100000001',152000.00,'ACTIVE','2018-01-12'),
-(2,4,2,'AC100000002',89000.00,'ACTIVE','2018-02-18'),
-(3,8,7,'AC100000003',320000.00,'ACTIVE','2018-03-22'),
-(4,1,1,'AC100000004',45000.00,'ACTIVE','2018-04-08'),
-(5,6,9,'AC100000005',780000.00,'ACTIVE','2018-05-15'),
-(6,5,1,'AC100000006',23000.00,'ACTIVE','2018-06-20'),
-(7,10,2,'AC100000007',67000.00,'ACTIVE','2018-07-25'),
-(8,11,1,'AC100000008',15000.00,'INACTIVE','2018-08-31'),
-(9,13,11,'AC100000009',200000.00,'ACTIVE','2018-09-10'),
-(10,14,1,'AC100000010',38000.00,'ACTIVE','2018-10-16'),
-(11,15,7,'AC100000011',95000.00,'ACTIVE','2018-11-22'),
-(12,16,1,'AC100000012',12000.00,'ACTIVE','2018-12-27'),
-(13,17,4,'AC100000013',54000.00,'ACTIVE','2019-01-17'),
-(14,18,1,'AC100000014',8000.00,'ACTIVE','2019-02-22'),
-(15,19,2,'AC100000015',76000.00,'ACTIVE','2019-03-27'),
-(16,20,1,'AC100000016',29000.00,'ACTIVE','2019-04-02'),
-(17,1,9,'AC100000017',410000.00,'ACTIVE','2019-05-12'),
-(18,2,1,'AC100000018',5000.00,'CLOSED','2019-06-19'),
-(19,3,1,'AC100000019',62000.00,'ACTIVE','2019-07-24'),
-(20,4,2,'AC100000020',88000.00,'ACTIVE','2019-08-29');
+INSERT INTO AccountTypes (type_name, interest_rate, min_balance) VALUES
+('Savings',3.5,1000),
+('Current',0,5000),
+('Salary',4.0,0);
 
--- ---------- 6. TRANSACTIONS (20 rows) ----------
-INSERT INTO transactions (account_id, transaction_type, amount, transaction_date, description, balance_after) VALUES
-(1,'DEPOSIT',20000,'2024-01-05 10:15:00','Salary credit',152000),
-(2,'WITHDRAWAL',5000,'2024-01-06 11:20:00','ATM withdrawal',89000),
-(3,'DEPOSIT',50000,'2024-01-07 09:30:00','Cheque deposit',320000),
-(4,'WITHDRAWAL',2000,'2024-01-08 14:45:00','Cash withdrawal',45000),
-(5,'DEPOSIT',100000,'2024-01-09 16:00:00','Business deposit',780000),
-(6,'WITHDRAWAL',1000,'2024-01-10 12:10:00','Online purchase',23000),
-(7,'DEPOSIT',15000,'2024-01-11 13:25:00','Salary credit',67000),
-(8,'WITHDRAWAL',3000,'2024-01-12 17:40:00','Bill payment',15000),
-(9,'DEPOSIT',25000,'2024-01-13 10:05:00','FD interest',200000),
-(10,'WITHDRAWAL',4000,'2024-01-14 11:55:00','ATM withdrawal',38000),
-(11,'DEPOSIT',30000,'2024-01-15 09:15:00','Cheque deposit',95000),
-(12,'WITHDRAWAL',1500,'2024-01-16 15:20:00','Online purchase',12000),
-(13,'DEPOSIT',10000,'2024-01-17 10:40:00','Salary credit',54000),
-(14,'WITHDRAWAL',500,'2024-01-18 12:30:00','Cash withdrawal',8000),
-(15,'DEPOSIT',12000,'2024-01-19 13:10:00','Cheque deposit',76000),
-(16,'WITHDRAWAL',2500,'2024-01-20 16:50:00','Bill payment',29000),
-(17,'DEPOSIT',60000,'2024-01-21 09:00:00','Business deposit',410000),
-(18,'WITHDRAWAL',1000,'2024-01-22 11:35:00','Account closure',5000),
-(19,'DEPOSIT',8000,'2024-01-23 10:25:00','Salary credit',62000),
-(20,'WITHDRAWAL',3500,'2024-01-24 14:15:00','ATM withdrawal',88000);
+INSERT INTO Accounts (customer_id, branch_id, account_type_id, account_number, balance, open_date, status) VALUES
+(1,1,1,'AC1001',125000,'2019-06-01','Active'),
+(2,3,1,'AC1002',85000,'2020-02-10','Active'),
+(3,4,2,'AC1003',560000,'2018-04-15','Active'),
+(4,5,1,'AC1004',32000,'2021-01-20','Active'),
+(5,2,3,'AC1005',48000,'2019-09-05','Active'),
+(6,3,1,'AC1006',15000,'2022-03-11','Active'),
+(7,5,2,'AC1007',210000,'2017-10-25','Active'),
+(8,1,1,'AC1008',9000,'2022-06-30','Frozen');
 
--- ---------- 7. LOAN TYPES (20 rows) ----------
-INSERT INTO loan_types (loan_name, interest_rate, max_amount, max_tenure_months) VALUES
-('Home Loan Fixed',8.50,8000000,240),
-('Home Loan Floating',8.25,8000000,240),
-('Car Loan New',9.00,1500000,84),
-('Car Loan Used',10.50,800000,60),
-('Personal Loan',12.00,1000000,60),
-('Education Loan Domestic',9.50,2000000,120),
-('Education Loan Abroad',10.00,4000000,180),
-('Gold Loan',9.75,500000,36),
-('Business Loan MSME',11.00,5000000,84),
-('Agriculture Loan',7.50,1000000,60),
-('Two Wheeler Loan',11.50,200000,36),
-('Loan Against Property',9.25,10000000,180),
-('Loan Against FD',7.00,500000,60),
-('Consumer Durable Loan',13.00,300000,24),
-('Overdraft Loan',12.50,1000000,12),
-('Working Capital Loan',11.25,5000000,36),
-('Term Loan',10.75,3000000,60),
-('Mortgage Loan',8.75,6000000,180),
-('Renovation Loan',10.25,1500000,84),
-('Marriage Loan',13.50,1000000,60);
+INSERT INTO Transactions (account_id, transaction_type, amount, transaction_date, description) VALUES
+(1,'Deposit',20000,'2024-01-05 10:00:00','Salary credit'),
+(1,'Withdrawal',5000,'2024-01-10 15:30:00','ATM withdrawal'),
+(2,'Deposit',10000,'2024-01-07 09:00:00','Cash deposit'),
+(3,'Withdrawal',50000,'2024-02-01 12:00:00','Business payment'),
+(3,'Deposit',100000,'2024-02-15 11:00:00','Client payment'),
+(4,'Deposit',5000,'2024-01-20 14:00:00','Cash deposit'),
+(5,'Withdrawal',3000,'2024-02-05 16:00:00','Online purchase'),
+(6,'Deposit',2000,'2024-01-25 10:15:00','Cash deposit'),
+(7,'Withdrawal',20000,'2024-02-10 13:00:00','Rent payment'),
+(8,'Deposit',1000,'2024-01-30 09:30:00','Cash deposit'),
+(1,'Withdrawal',8000,'2024-02-20 17:00:00','Utility bill'),
+(3,'Withdrawal',25000,'2024-03-01 12:30:00','Vendor payment');
 
--- ---------- 8. LOANS (20 rows) ----------
-INSERT INTO loans (customer_id, loan_type_id, branch_id, principal_amount, interest_rate, tenure_months, emi_amount, start_date, status) VALUES
-(1,1,1,2500000,8.50,180,24500,'2021-01-15','ACTIVE'),
-(2,3,4,800000,9.00,60,16800,'2021-02-20','ACTIVE'),
-(3,5,8,300000,12.00,36,9950,'2021-03-25','CLOSED'),
-(4,6,1,1200000,9.50,84,18600,'2021-04-10','ACTIVE'),
-(5,9,6,3000000,11.00,84,52000,'2021-05-15','ACTIVE'),
-(6,2,5,1800000,8.25,180,17200,'2021-06-20','ACTIVE'),
-(7,4,10,450000,10.50,48,11600,'2021-07-25','ACTIVE'),
-(8,8,11,200000,9.75,24,9200,'2021-08-30','CLOSED'),
-(9,1,13,3500000,8.50,240,30500,'2021-09-04','ACTIVE'),
-(10,5,14,250000,12.00,36,8300,'2021-10-09','ACTIVE'),
-(11,11,15,150000,11.50,36,4950,'2021-11-14','ACTIVE'),
-(12,12,16,5000000,9.25,180,51000,'2021-12-19','ACTIVE'),
-(13,3,17,600000,9.00,60,12500,'2022-01-23','ACTIVE'),
-(14,6,18,900000,9.50,84,14000,'2022-02-27','ACTIVE'),
-(15,9,19,2000000,11.00,60,43500,'2022-04-03','ACTIVE'),
-(16,5,20,180000,12.00,24,8500,'2022-05-08','CLOSED'),
-(17,1,1,4000000,8.50,240,34800,'2022-06-13','ACTIVE'),
-(18,7,2,5000000,10.00,180,53700,'2022-07-18','ACTIVE'),
-(19,14,3,250000,13.00,24,11700,'2022-08-23','ACTIVE'),
-(20,8,4,180000,9.75,24,8300,'2022-09-27','CLOSED');
+INSERT INTO Cards (account_id, card_number, card_type, expiry_date, card_status) VALUES
+(1,'4111000000001001','Debit','2027-06-30','Active'),
+(2,'4111000000001002','Debit','2026-02-28','Active'),
+(3,'5500000000001003','Credit','2028-04-30','Active'),
+(4,'4111000000001004','Debit','2025-01-31','Expired'),
+(5,'5500000000001005','Credit','2027-09-30','Active'),
+(7,'4111000000001007','Debit','2026-10-31','Active');
 
--- ---------- 9. LOAN PAYMENTS (20 rows) ----------
-INSERT INTO loan_payments (loan_id, payment_date, amount_paid, principal_component, interest_component, payment_status) VALUES
-(1,'2024-01-15',24500,16200,8300,'PAID'),
-(2,'2024-01-20',16800,11200,5600,'PAID'),
-(3,'2024-01-25',9950,8200,1750,'PAID'),
-(4,'2024-01-10',18600,9500,9100,'PAID'),
-(5,'2024-01-15',52000,30000,22000,'PAID'),
-(6,'2024-01-20',17200,9200,8000,'PAID'),
-(7,'2024-01-25',11600,7100,4500,'PAID'),
-(8,'2024-01-30',9200,7800,1400,'PAID'),
-(9,'2024-02-04',30500,18200,12300,'PAID'),
-(10,'2024-02-09',8300,5700,2600,'PAID'),
-(11,'2024-02-14',4950,3700,1250,'PAID'),
-(12,'2024-02-19',51000,28800,22200,'PAID'),
-(13,'2024-02-23',12500,8000,4500,'PAID'),
-(14,'2024-02-27',14000,8400,5600,'PAID'),
-(15,'2024-03-03',43500,24700,18800,'PAID'),
-(16,'2024-03-08',8500,7100,1400,'PAID'),
-(17,'2024-03-13',34800,19200,15600,'PAID'),
-(18,'2024-03-18',53700,28900,24800,'PAID'),
-(19,'2024-03-23',11700,9400,2300,'PAID'),
-(20,'2024-03-27',8300,7000,1300,'PAID');
+INSERT INTO LoanTypes (loan_name, interest_rate) VALUES
+('Home Loan',7.5),('Personal Loan',11.0),('Car Loan',9.0),('Education Loan',8.0);
 
--- ---------- 10. BALANCE HISTORY (20 rows) ----------
-INSERT INTO balance_history (account_id, balance_date, opening_balance, closing_balance) VALUES
-(1,'2024-01-01',132000,152000),
-(2,'2024-01-01',94000,89000),
-(3,'2024-01-01',270000,320000),
-(4,'2024-01-01',47000,45000),
-(5,'2024-01-01',680000,780000),
-(6,'2024-01-01',24000,23000),
-(7,'2024-01-01',52000,67000),
-(8,'2024-01-01',18000,15000),
-(9,'2024-01-01',175000,200000),
-(10,'2024-01-01',42000,38000),
-(11,'2024-01-01',65000,95000),
-(12,'2024-01-01',13500,12000),
-(13,'2024-01-01',44000,54000),
-(14,'2024-01-01',8500,8000),
-(15,'2024-01-01',64000,76000),
-(16,'2024-01-01',31500,29000),
-(17,'2024-01-01',350000,410000),
-(18,'2024-01-01',6000,5000),
-(19,'2024-01-01',54000,62000),
-(20,'2024-01-01',91500,88000);
+INSERT INTO Loans (customer_id, loan_type_id, branch_id, loan_amount, issue_date, tenure_months, status) VALUES
+(1,1,1,2500000,'2020-05-01',240,'Active'),
+(2,3,3,800000,'2021-03-15',60,'Active'),
+(3,2,4,300000,'2022-01-10',24,'Closed'),
+(4,4,5,500000,'2019-08-20',48,'Active'),
+(6,3,3,600000,'2023-02-01',36,'Active'),
+(7,1,5,1800000,'2018-11-05',180,'Active');
 
+INSERT INTO LoanPayments (loan_id, payment_date, amount_paid) VALUES
+(1,'2024-01-05',25000),
+(1,'2024-02-05',25000),
+(2,'2024-01-10',15000),
+(2,'2024-02-10',15000),
+(3,'2022-06-10',14000),
+(4,'2024-01-20',12000),
+(5,'2024-02-15',18000),
+(6,'2024-01-25',20000);
+
+INSERT INTO FixedDeposits (customer_id, account_id, amount, start_date, maturity_date, interest_rate) VALUES
+(1,1,100000,'2023-01-01','2025-01-01',6.5),
+(3,3,300000,'2022-06-01','2024-06-01',7.0),
+(5,5,50000,'2023-09-01','2024-09-01',6.0),
+(7,7,150000,'2021-01-01','2026-01-01',7.2);
+
+INSERT INTO Beneficiaries (customer_id, beneficiary_name, beneficiary_account_number, bank_name) VALUES
+(1,'Suresh Iyer','AC9001','HDFC Bank'),
+(2,'Anil Patil','AC9002','ICICI Bank'),
+(3,'Ganesh Rao','AC9003','SBI'),
+(5,'Radha Das','AC9004','Axis Bank');
+
+INSERT INTO Cheques (account_id, cheque_number, issue_date, amount, status) VALUES
+(1,'CHQ0001','2024-01-15',15000,'Cleared'),
+(3,'CHQ0002','2024-02-01',40000,'Cleared'),
+(4,'CHQ0003','2024-01-22',5000,'Pending'),
+(7,'CHQ0004','2024-02-05',12000,'Bounced');
+
+INSERT INTO Nominees (customer_id, nominee_name, relation, dob) VALUES
+(1,'Geetha Iyer','Spouse','1987-03-14'),
+(2,'Anil Patil','Father','1960-07-22'),
+(3,'Sunita Rao','Spouse','1980-05-19'),
+(4,'Ravi Narayanan','Brother','1993-02-11'),
+(5,'Radha Das','Mother','1958-12-01');
 
 -- ============================================================
--- SECTION 3: TRIGGERS
+-- SECTION 3: QUERIES (14 TOPICS x 5 QUERIES = 70 QUERIES)
 -- ============================================================
 
--- TRIGGER 1: Block a withdrawal that would overdraw an account
-DELIMITER //
-CREATE TRIGGER trg_before_transaction_insert
-BEFORE INSERT ON transactions
-FOR EACH ROW
+-- ----------------------------------------------------------
+-- TOPIC 1: BASIC SELECT & WHERE
+-- ----------------------------------------------------------
+-- 1.1 List all customers from Chennai
+SELECT * FROM Customers WHERE city = 'Chennai';
+
+-- 1.2 Find all active accounts
+SELECT * FROM Accounts WHERE status = 'Active';
+
+-- 1.3 Get accounts with balance greater than 100000
+SELECT account_number, balance FROM Accounts WHERE balance > 100000;
+
+-- 1.4 List all female customers
+SELECT cust_name, gender, city FROM Customers WHERE gender = 'Female';
+
+-- 1.5 Find loans with amount between 500000 and 2000000
+SELECT loan_id, customer_id, loan_amount FROM Loans WHERE loan_amount BETWEEN 500000 AND 2000000;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 2: ORDER BY & LIMIT
+-- ----------------------------------------------------------
+-- 2.1 Top 3 customers by account balance
+SELECT c.cust_name, a.balance
+FROM Customers c JOIN Accounts a ON c.customer_id = a.customer_id
+ORDER BY a.balance DESC LIMIT 3;
+
+-- 2.2 List employees by salary ascending
+SELECT emp_name, salary FROM Employees ORDER BY salary ASC;
+
+-- 2.3 Latest 5 transactions
+SELECT * FROM Transactions ORDER BY transaction_date DESC LIMIT 5;
+
+-- 2.4 Loans sorted by issue date (oldest first)
+SELECT loan_id, customer_id, issue_date FROM Loans ORDER BY issue_date ASC;
+
+-- 2.5 Customers sorted alphabetically by name
+SELECT cust_name, city FROM Customers ORDER BY cust_name ASC;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 3: AGGREGATE FUNCTIONS (SUM, AVG, COUNT, MAX, MIN)
+-- ----------------------------------------------------------
+-- 3.1 Total balance held by the bank
+SELECT SUM(balance) AS total_bank_balance FROM Accounts;
+
+-- 3.2 Average loan amount issued
+SELECT AVG(loan_amount) AS average_loan_amount FROM Loans;
+
+-- 3.3 Total number of customers
+SELECT COUNT(*) AS total_customers FROM Customers;
+
+-- 3.4 Highest and lowest account balance
+SELECT MAX(balance) AS highest_balance, MIN(balance) AS lowest_balance FROM Accounts;
+
+-- 3.5 Total amount deposited across all transactions
+SELECT SUM(amount) AS total_deposits FROM Transactions WHERE transaction_type = 'Deposit';
+
+
+-- ----------------------------------------------------------
+-- TOPIC 4: GROUP BY & HAVING
+-- ----------------------------------------------------------
+-- 4.1 Number of accounts per branch
+SELECT branch_id, COUNT(*) AS account_count FROM Accounts GROUP BY branch_id;
+
+-- 4.2 Total loan amount per loan type
+SELECT loan_type_id, SUM(loan_amount) AS total_amount FROM Loans GROUP BY loan_type_id;
+
+-- 4.3 Average balance per account type
+SELECT account_type_id, AVG(balance) AS avg_balance FROM Accounts GROUP BY account_type_id;
+
+-- 4.4 Branches having more than 2 customers
+SELECT branch_id, COUNT(*) AS cust_count FROM Customers
+GROUP BY branch_id HAVING COUNT(*) > 1;
+
+-- 4.5 Customers with total transaction amount above 20000
+SELECT account_id, SUM(amount) AS total_amount FROM Transactions
+GROUP BY account_id HAVING SUM(amount) > 20000;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 5: INNER JOIN
+-- ----------------------------------------------------------
+-- 5.1 Customer names with their account numbers and balances
+SELECT c.cust_name, a.account_number, a.balance
+FROM Customers c INNER JOIN Accounts a ON c.customer_id = a.customer_id;
+
+-- 5.2 Employees with their department and branch names
+SELECT e.emp_name, d.department_name, b.branch_name
+FROM Employees e
+INNER JOIN Departments d ON e.department_id = d.department_id
+INNER JOIN Branches b ON e.branch_id = b.branch_id;
+
+-- 5.3 Loan details with customer names and loan type
+SELECT c.cust_name, lt.loan_name, l.loan_amount, l.status
+FROM Loans l
+INNER JOIN Customers c ON l.customer_id = c.customer_id
+INNER JOIN LoanTypes lt ON l.loan_type_id = lt.loan_type_id;
+
+-- 5.4 Transactions with account number and customer name
+SELECT c.cust_name, a.account_number, t.transaction_type, t.amount
+FROM Transactions t
+INNER JOIN Accounts a ON t.account_id = a.account_id
+INNER JOIN Customers c ON a.customer_id = c.customer_id;
+
+-- 5.5 Card details with account and customer info
+SELECT c.cust_name, a.account_number, cd.card_type, cd.card_status
+FROM Cards cd
+INNER JOIN Accounts a ON cd.account_id = a.account_id
+INNER JOIN Customers c ON a.customer_id = c.customer_id;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 6: LEFT JOIN
+-- ----------------------------------------------------------
+-- 6.1 All customers with their loans (including customers with no loans)
+SELECT c.cust_name, l.loan_id, l.loan_amount
+FROM Customers c LEFT JOIN Loans l ON c.customer_id = l.customer_id;
+
+-- 6.2 All accounts with cards (including accounts without a card)
+SELECT a.account_number, cd.card_type, cd.card_status
+FROM Accounts a LEFT JOIN Cards cd ON a.account_id = cd.account_id;
+
+-- 6.3 All customers with their fixed deposits (including those without FDs)
+SELECT c.cust_name, fd.amount, fd.maturity_date
+FROM Customers c LEFT JOIN FixedDeposits fd ON c.customer_id = fd.customer_id;
+
+-- 6.4 All customers with their nominees (including those without a nominee)
+SELECT c.cust_name, n.nominee_name, n.relation
+FROM Customers c LEFT JOIN Nominees n ON c.customer_id = n.customer_id;
+
+-- 6.5 All accounts with cheque records (including accounts with no cheques)
+SELECT a.account_number, ch.cheque_number, ch.status
+FROM Accounts a LEFT JOIN Cheques ch ON a.account_id = ch.account_id;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 7: SUBQUERIES
+-- ----------------------------------------------------------
+-- 7.1 Customers whose balance is above the average balance
+SELECT cust_name FROM Customers
+WHERE customer_id IN (
+    SELECT customer_id FROM Accounts WHERE balance > (SELECT AVG(balance) FROM Accounts)
+);
+
+-- 7.2 Employees earning more than the average salary
+SELECT emp_name, salary FROM Employees
+WHERE salary > (SELECT AVG(salary) FROM Employees);
+
+-- 7.3 Customers who have taken the highest loan amount
+SELECT cust_name FROM Customers
+WHERE customer_id = (SELECT customer_id FROM Loans ORDER BY loan_amount DESC LIMIT 1);
+
+-- 7.4 Accounts that have never had a transaction
+SELECT account_number FROM Accounts
+WHERE account_id NOT IN (SELECT DISTINCT account_id FROM Transactions);
+
+-- 7.5 Branches that have issued more than one loan
+SELECT branch_name FROM Branches
+WHERE branch_id IN (
+    SELECT branch_id FROM Loans GROUP BY branch_id HAVING COUNT(*) > 1
+);
+
+
+-- ----------------------------------------------------------
+-- TOPIC 8: STRING FUNCTIONS
+-- ----------------------------------------------------------
+-- 8.1 Display customer names in uppercase
+SELECT UPPER(cust_name) AS name_upper FROM Customers;
+
+-- 8.2 Extract first 4 digits of account numbers
+SELECT account_number, SUBSTRING(account_number,1,4) AS prefix FROM Accounts;
+
+-- 8.3 Concatenate customer name with city
+SELECT CONCAT(cust_name, ' - ', city) AS customer_info FROM Customers;
+
+-- 8.4 Length of each customer's email address
+SELECT cust_name, LENGTH(email) AS email_length FROM Customers;
+
+-- 8.5 Customers whose name starts with 'A'
+SELECT cust_name FROM Customers WHERE cust_name LIKE 'A%';
+
+
+-- ----------------------------------------------------------
+-- TOPIC 9: DATE FUNCTIONS
+-- ----------------------------------------------------------
+-- 9.1 Customer age calculated from date of birth
+SELECT cust_name, dob, TIMESTAMPDIFF(YEAR, dob, CURDATE()) AS age FROM Customers;
+
+-- 9.2 Loans issued in the year 2020
+SELECT loan_id, customer_id, issue_date FROM Loans WHERE YEAR(issue_date) = 2020;
+
+-- 9.3 Number of months remaining for FD maturity
+SELECT fd_id, TIMESTAMPDIFF(MONTH, CURDATE(), maturity_date) AS months_remaining FROM FixedDeposits;
+
+-- 9.4 Transactions made in January 2024
+SELECT * FROM Transactions
+WHERE transaction_date BETWEEN '2024-01-01' AND '2024-01-31';
+
+-- 9.5 Employees who joined in the last 5 years
+SELECT emp_name, hire_date FROM Employees
+WHERE hire_date >= DATE_SUB(CURDATE(), INTERVAL 5 YEAR);
+
+
+-- ----------------------------------------------------------
+-- TOPIC 10: VIEWS
+-- ----------------------------------------------------------
+-- 10.1 View for customer account summary
+CREATE OR REPLACE VIEW vw_customer_account_summary AS
+SELECT c.customer_id, c.cust_name, a.account_number, a.balance, b.branch_name
+FROM Customers c
+JOIN Accounts a ON c.customer_id = a.customer_id
+JOIN Branches b ON a.branch_id = b.branch_id;
+SELECT * FROM vw_customer_account_summary;
+
+-- 10.2 View for active loans
+CREATE OR REPLACE VIEW vw_active_loans AS
+SELECT l.loan_id, c.cust_name, lt.loan_name, l.loan_amount, l.status
+FROM Loans l
+JOIN Customers c ON l.customer_id = c.customer_id
+JOIN LoanTypes lt ON l.loan_type_id = lt.loan_type_id
+WHERE l.status = 'Active';
+SELECT * FROM vw_active_loans;
+
+-- 10.3 View for branch-wise total deposits
+CREATE OR REPLACE VIEW vw_branch_deposits AS
+SELECT b.branch_name, SUM(a.balance) AS total_deposits
+FROM Branches b JOIN Accounts a ON b.branch_id = a.branch_id
+GROUP BY b.branch_name;
+SELECT * FROM vw_branch_deposits;
+
+-- 10.4 View for employee details with department and branch
+CREATE OR REPLACE VIEW vw_employee_details AS
+SELECT e.emp_name, d.department_name, b.branch_name, e.salary
+FROM Employees e
+JOIN Departments d ON e.department_id = d.department_id
+JOIN Branches b ON e.branch_id = b.branch_id;
+SELECT * FROM vw_employee_details;
+
+-- 10.5 View for high-value customers (balance above 100000)
+CREATE OR REPLACE VIEW vw_high_value_customers AS
+SELECT c.cust_name, a.balance
+FROM Customers c JOIN Accounts a ON c.customer_id = a.customer_id
+WHERE a.balance > 100000;
+SELECT * FROM vw_high_value_customers;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 11: STORED PROCEDURES
+-- ----------------------------------------------------------
+DELIMITER $$
+
+-- 11.1 Procedure to get all accounts of a given customer
+CREATE PROCEDURE GetCustomerAccounts(IN p_customer_id INT)
+BEGIN
+    SELECT * FROM Accounts WHERE customer_id = p_customer_id;
+END$$
+
+-- 11.2 Procedure to deposit money into an account
+CREATE PROCEDURE DepositAmount(IN p_account_id INT, IN p_amount DECIMAL(12,2))
+BEGIN
+    UPDATE Accounts SET balance = balance + p_amount WHERE account_id = p_account_id;
+    INSERT INTO Transactions(account_id, transaction_type, amount, transaction_date, description)
+    VALUES (p_account_id, 'Deposit', p_amount, NOW(), 'Deposit via procedure');
+END$$
+
+-- 11.3 Procedure to withdraw money from an account (checks balance first)
+CREATE PROCEDURE WithdrawAmount(IN p_account_id INT, IN p_amount DECIMAL(12,2))
 BEGIN
     DECLARE current_balance DECIMAL(12,2);
-    SELECT balance INTO current_balance FROM accounts WHERE account_id = NEW.account_id;
-
-    IF NEW.transaction_type = 'WITHDRAWAL' AND NEW.amount > current_balance THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Insufficient balance for this withdrawal';
+    SELECT balance INTO current_balance FROM Accounts WHERE account_id = p_account_id;
+    IF current_balance >= p_amount THEN
+        UPDATE Accounts SET balance = balance - p_amount WHERE account_id = p_account_id;
+        INSERT INTO Transactions(account_id, transaction_type, amount, transaction_date, description)
+        VALUES (p_account_id, 'Withdrawal', p_amount, NOW(), 'Withdrawal via procedure');
+    ELSE
+        SELECT 'Insufficient balance' AS message;
     END IF;
-END //
+END$$
+
+-- 11.4 Procedure to get total loan amount for a customer
+CREATE PROCEDURE GetCustomerLoanTotal(IN p_customer_id INT)
+BEGIN
+    SELECT customer_id, SUM(loan_amount) AS total_loans
+    FROM Loans WHERE customer_id = p_customer_id
+    GROUP BY customer_id;
+END$$
+
+-- 11.5 Procedure to close an account
+CREATE PROCEDURE CloseAccount(IN p_account_id INT)
+BEGIN
+    UPDATE Accounts SET status = 'Closed' WHERE account_id = p_account_id;
+END$$
+
 DELIMITER ;
 
--- TRIGGER 2: After a transaction is inserted, auto-update account balance
--- and log the change into balance_history
-DELIMITER //
-CREATE TRIGGER trg_after_transaction_insert
-AFTER INSERT ON transactions
+-- Example calls:
+-- CALL GetCustomerAccounts(1);
+-- CALL DepositAmount(1, 5000);
+-- CALL WithdrawAmount(1, 2000);
+-- CALL GetCustomerLoanTotal(1);
+-- CALL CloseAccount(8);
+
+
+-- ----------------------------------------------------------
+-- TOPIC 12: TRIGGERS
+-- ----------------------------------------------------------
+DELIMITER $$
+
+-- 12.1 Trigger to prevent negative balance on withdrawal update
+CREATE TRIGGER trg_prevent_negative_balance
+BEFORE UPDATE ON Accounts
 FOR EACH ROW
 BEGIN
-    DECLARE old_bal DECIMAL(12,2);
-
-    SELECT balance INTO old_bal FROM accounts WHERE account_id = NEW.account_id;
-
-    IF NEW.transaction_type = 'DEPOSIT' THEN
-        UPDATE accounts SET balance = balance + NEW.amount WHERE account_id = NEW.account_id;
-    ELSEIF NEW.transaction_type = 'WITHDRAWAL' THEN
-        UPDATE accounts SET balance = balance - NEW.amount WHERE account_id = NEW.account_id;
+    IF NEW.balance < 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Balance cannot be negative';
     END IF;
+END$$
 
-    INSERT INTO balance_history (account_id, balance_date, opening_balance, closing_balance)
-    VALUES (NEW.account_id, DATE(NEW.transaction_date), old_bal, NEW.balance_after);
-END //
-DELIMITER ;
-
-
--- ============================================================
--- SECTION 4: VIEWS
--- ============================================================
-
-CREATE VIEW vw_customer_account_summary AS
-SELECT c.customer_id, CONCAT(c.first_name,' ',c.last_name) AS customer_name,
-       a.account_number, a.balance, b.branch_name, t.type_name
-FROM customers c
-JOIN accounts a ON c.customer_id = a.customer_id
-JOIN branches b ON a.branch_id = b.branch_id
-JOIN account_types t ON a.account_type_id = t.account_type_id;
-
-CREATE VIEW vw_active_loans_summary AS
-SELECT l.loan_id, CONCAT(c.first_name,' ',c.last_name) AS customer_name,
-       lt.loan_name, l.principal_amount, l.interest_rate, l.emi_amount, l.status
-FROM loans l
-JOIN customers c ON l.customer_id = c.customer_id
-JOIN loan_types lt ON l.loan_type_id = lt.loan_type_id
-WHERE l.status = 'ACTIVE';
-
-
--- ============================================================
--- SECTION 5: STORED PROCEDURES
--- ============================================================
-
-DELIMITER //
-CREATE PROCEDURE sp_get_customer_statement(IN p_customer_id INT)
+-- 12.2 Trigger to log every new account creation into Transactions as an opening entry
+CREATE TRIGGER trg_account_open_log
+AFTER INSERT ON Accounts
+FOR EACH ROW
 BEGIN
-    SELECT t.transaction_id, a.account_number, t.transaction_type,
-           t.amount, t.transaction_date, t.balance_after
-    FROM transactions t
-    JOIN accounts a ON t.account_id = a.account_id
-    WHERE a.customer_id = p_customer_id
-    ORDER BY t.transaction_date;
-END //
-DELIMITER ;
+    INSERT INTO Transactions(account_id, transaction_type, amount, transaction_date, description)
+    VALUES (NEW.account_id, 'Deposit', NEW.balance, NOW(), 'Account opening balance');
+END$$
 
-DELIMITER //
-CREATE PROCEDURE sp_loan_outstanding(IN p_loan_id INT, OUT p_outstanding DECIMAL(12,2))
+-- 12.3 Trigger to auto-update card status to Expired based on expiry date on insert
+CREATE TRIGGER trg_card_expiry_check
+BEFORE INSERT ON Cards
+FOR EACH ROW
 BEGIN
-    DECLARE total_paid DECIMAL(12,2);
-    SELECT IFNULL(SUM(principal_component),0) INTO total_paid
-    FROM loan_payments WHERE loan_id = p_loan_id;
+    IF NEW.expiry_date < CURDATE() THEN
+        SET NEW.card_status = 'Expired';
+    END IF;
+END$$
 
-    SELECT principal_amount - total_paid INTO p_outstanding
-    FROM loans WHERE loan_id = p_loan_id;
-END //
+-- 12.4 Trigger to prevent deleting a customer who has active loans
+CREATE TRIGGER trg_prevent_customer_delete
+BEFORE DELETE ON Customers
+FOR EACH ROW
+BEGIN
+    IF (SELECT COUNT(*) FROM Loans WHERE customer_id = OLD.customer_id AND status = 'Active') > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete customer with active loans';
+    END IF;
+END$$
+
+-- 12.5 Trigger to timestamp loan closure automatically (loans marked Closed get a payment record note)
+CREATE TRIGGER trg_loan_closure_note
+AFTER UPDATE ON Loans
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Closed' AND OLD.status <> 'Closed' THEN
+        INSERT INTO LoanPayments(loan_id, payment_date, amount_paid)
+        VALUES (NEW.loan_id, CURDATE(), 0);
+    END IF;
+END$$
+
 DELIMITER ;
 
 
+-- ----------------------------------------------------------
+-- TOPIC 13: WINDOW FUNCTIONS
+-- ----------------------------------------------------------
+-- 13.1 Rank customers by account balance
+SELECT c.cust_name, a.balance,
+       RANK() OVER (ORDER BY a.balance DESC) AS balance_rank
+FROM Customers c JOIN Accounts a ON c.customer_id = a.customer_id;
+
+-- 13.2 Running total of deposits per account ordered by date
+SELECT account_id, transaction_date, amount,
+       SUM(amount) OVER (PARTITION BY account_id ORDER BY transaction_date) AS running_total
+FROM Transactions WHERE transaction_type = 'Deposit';
+
+-- 13.3 Row number of loans per branch ordered by loan amount
+SELECT branch_id, loan_id, loan_amount,
+       ROW_NUMBER() OVER (PARTITION BY branch_id ORDER BY loan_amount DESC) AS row_num
+FROM Loans;
+
+-- 13.4 Average balance per account type shown alongside each account (window)
+SELECT account_number, account_type_id, balance,
+       AVG(balance) OVER (PARTITION BY account_type_id) AS type_avg_balance
+FROM Accounts;
+
+-- 13.5 Dense rank of employees by salary within each department
+SELECT emp_name, department_id, salary,
+       DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS salary_rank
+FROM Employees;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 14: SET OPERATIONS & CASE STATEMENTS
+-- ----------------------------------------------------------
+-- 14.1 List of all customer and employee names combined (UNION)
+SELECT cust_name AS person_name, 'Customer' AS role FROM Customers
+UNION
+SELECT emp_name AS person_name, 'Employee' AS role FROM Employees;
+
+-- 14.2 Cities that have both customers and branches (UNION to combine, then check via city match manually)
+SELECT DISTINCT city FROM Customers
+UNION
+SELECT DISTINCT branch_city FROM Branches;
+
+-- 14.3 Categorize accounts by balance range using CASE
+SELECT account_number, balance,
+    CASE
+        WHEN balance >= 200000 THEN 'High Value'
+        WHEN balance >= 50000 THEN 'Medium Value'
+        ELSE 'Low Value'
+    END AS balance_category
+FROM Accounts;
+
+-- 14.4 Categorize loans as Short/Medium/Long term using CASE
+SELECT loan_id, tenure_months,
+    CASE
+        WHEN tenure_months <= 24 THEN 'Short Term'
+        WHEN tenure_months <= 60 THEN 'Medium Term'
+        ELSE 'Long Term'
+    END AS loan_term_category
+FROM Loans;
+
+-- 14.5 UNION ALL of all deposit and withdrawal transaction counts
+SELECT 'Deposit' AS type, COUNT(*) AS total FROM Transactions WHERE transaction_type = 'Deposit'
+UNION ALL
+SELECT 'Withdrawal' AS type, COUNT(*) AS total FROM Transactions WHERE transaction_type = 'Withdrawal';
+
 -- ============================================================
--- SECTION 6: QUERIES 
+-- END OF PROJECT — 15 TABLES, 70 QUERIES ACROSS 14 TOPICS
+-- ============================================================-- ============================================================
+-- PROJECT     : BANKING MANAGEMENT SYSTEM
+-- DATABASE    : MySQL
+-- TABLES      : 15
+-- QUERY TOPICS: 14 (5 queries each = 70 queries)
 -- ============================================================
 
--- Q1  Customers from Chennai
-SELECT * FROM customers WHERE city = 'Chennai';
+DROP DATABASE IF EXISTS banking_system;
+CREATE DATABASE banking_system;
+USE banking_system;
 
--- Q2 Active accounts with balance above 50000
-SELECT account_number, balance FROM accounts WHERE balance > 50000;
+-- ============================================================
+-- SECTION 1: TABLE CREATION (15 TABLES)
+-- ============================================================
 
--- Q3 Branches in Tamil Nadu
-SELECT branch_name, city FROM branches WHERE state = 'Tamil Nadu';
+-- 1. Branches
+CREATE TABLE Branches (
+    branch_id INT PRIMARY KEY AUTO_INCREMENT,
+    branch_name VARCHAR(100) NOT NULL,
+    branch_city VARCHAR(50) NOT NULL,
+    ifsc_code VARCHAR(15) UNIQUE NOT NULL
+);
 
--- Q4 Count customers per state
-SELECT state, COUNT(*) AS total FROM customers GROUP BY state;
+-- 2. Departments
+CREATE TABLE Departments (
+    department_id INT PRIMARY KEY AUTO_INCREMENT,
+    department_name VARCHAR(50) NOT NULL
+);
 
--- Q5 [JOIN] Customer name with account balance
-SELECT c.first_name, a.balance FROM customers c JOIN accounts a ON c.customer_id = a.customer_id;
+-- 3. Employees
+CREATE TABLE Employees (
+    employee_id INT PRIMARY KEY AUTO_INCREMENT,
+    emp_name VARCHAR(100) NOT NULL,
+    department_id INT,
+    branch_id INT,
+    designation VARCHAR(50),
+    salary DECIMAL(10,2),
+    hire_date DATE,
+    FOREIGN KEY (department_id) REFERENCES Departments(department_id),
+    FOREIGN KEY (branch_id) REFERENCES Branches(branch_id)
+);
 
--- Q6 [JOIN] Account with branch name
-SELECT a.account_number, b.branch_name FROM accounts a JOIN branches b ON a.branch_id = b.branch_id;
+-- 4. Customers
+CREATE TABLE Customers (
+    customer_id INT PRIMARY KEY AUTO_INCREMENT,
+    cust_name VARCHAR(100) NOT NULL,
+    dob DATE,
+    gender VARCHAR(10),
+    phone VARCHAR(15),
+    email VARCHAR(100),
+    address VARCHAR(200),
+    city VARCHAR(50),
+    branch_id INT,
+    FOREIGN KEY (branch_id) REFERENCES Branches(branch_id)
+);
 
--- Q7 [JOIN] Loan with loan type name
-SELECT l.loan_id, lt.loan_name FROM loans l JOIN loan_types lt ON l.loan_type_id = lt.loan_type_id;
+-- 5. AccountTypes
+CREATE TABLE AccountTypes (
+    account_type_id INT PRIMARY KEY AUTO_INCREMENT,
+    type_name VARCHAR(50) NOT NULL,
+    interest_rate DECIMAL(5,2),
+    min_balance DECIMAL(10,2)
+);
 
--- Q8 [LEFT JOIN] Customers with their loans (if any)
-SELECT c.first_name, l.loan_id FROM customers c LEFT JOIN loans l ON c.customer_id = l.customer_id;
+-- 6. Accounts
+CREATE TABLE Accounts (
+    account_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    branch_id INT,
+    account_type_id INT,
+    account_number VARCHAR(20) UNIQUE NOT NULL,
+    balance DECIMAL(12,2) DEFAULT 0,
+    open_date DATE,
+    status VARCHAR(20) DEFAULT 'Active',
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+    FOREIGN KEY (branch_id) REFERENCES Branches(branch_id),
+    FOREIGN KEY (account_type_id) REFERENCES AccountTypes(account_type_id)
+);
 
--- Q9 [LEFT JOIN] Branches with employee count
-SELECT b.branch_name, COUNT(e.employee_id) AS emp_count FROM branches b LEFT JOIN employees e ON b.branch_id = e.branch_id GROUP BY b.branch_name;
+-- 7. Transactions
+CREATE TABLE Transactions (
+    transaction_id INT PRIMARY KEY AUTO_INCREMENT,
+    account_id INT,
+    transaction_type VARCHAR(20),
+    amount DECIMAL(12,2),
+    transaction_date DATETIME,
+    description VARCHAR(200),
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id)
+);
 
--- Q10 [SELF JOIN] Employees in the same branch
-SELECT e1.first_name, e2.first_name FROM employees e1 JOIN employees e2 ON e1.branch_id = e2.branch_id AND e1.employee_id < e2.employee_id;
+-- 8. Cards
+CREATE TABLE Cards (
+    card_id INT PRIMARY KEY AUTO_INCREMENT,
+    account_id INT,
+    card_number VARCHAR(20),
+    card_type VARCHAR(20),
+    expiry_date DATE,
+    card_status VARCHAR(20) DEFAULT 'Active',
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id)
+);
 
--- ---------------- LEVEL 3: AGGREGATE / GROUP BY / HAVING  ----------------
+-- 9. LoanTypes
+CREATE TABLE LoanTypes (
+    loan_type_id INT PRIMARY KEY AUTO_INCREMENT,
+    loan_name VARCHAR(50),
+    interest_rate DECIMAL(5,2)
+);
 
--- Q11 [AGGREGATE] Total balance per branch
-SELECT branch_id, SUM(balance) AS total_balance FROM accounts GROUP BY branch_id;
+-- 10. Loans
+CREATE TABLE Loans (
+    loan_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    loan_type_id INT,
+    branch_id INT,
+    loan_amount DECIMAL(12,2),
+    issue_date DATE,
+    tenure_months INT,
+    status VARCHAR(20) DEFAULT 'Active',
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+    FOREIGN KEY (loan_type_id) REFERENCES LoanTypes(loan_type_id),
+    FOREIGN KEY (branch_id) REFERENCES Branches(branch_id)
+);
 
--- Q12 [AGGREGATE+HAVING] Branches with total balance above 100000
-SELECT branch_id, SUM(balance) AS total_balance FROM accounts GROUP BY branch_id HAVING SUM(balance) > 100000;
+-- 11. LoanPayments
+CREATE TABLE LoanPayments (
+    payment_id INT PRIMARY KEY AUTO_INCREMENT,
+    loan_id INT,
+    payment_date DATE,
+    amount_paid DECIMAL(10,2),
+    FOREIGN KEY (loan_id) REFERENCES Loans(loan_id)
+);
 
--- Q13 [AGGREGATE] Average loan amount per loan type
-SELECT loan_type_id, AVG(principal_amount) AS avg_amount FROM loans GROUP BY loan_type_id;
+-- 12. FixedDeposits
+CREATE TABLE FixedDeposits (
+    fd_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    account_id INT,
+    amount DECIMAL(12,2),
+    start_date DATE,
+    maturity_date DATE,
+    interest_rate DECIMAL(5,2),
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id)
+);
 
--- Q14 [AGGREGATE] Total paid per loan
-SELECT loan_id, SUM(amount_paid) AS total_paid FROM loan_payments GROUP BY loan_id;
+-- 13. Beneficiaries
+CREATE TABLE Beneficiaries (
+    beneficiary_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    beneficiary_name VARCHAR(100),
+    beneficiary_account_number VARCHAR(20),
+    bank_name VARCHAR(100),
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+);
 
--- Q15 [AGGREGATE] Average salary per designation
-SELECT designation, AVG(salary) AS avg_salary FROM employees GROUP BY designation;
+-- 14. Cheques
+CREATE TABLE Cheques (
+    cheque_id INT PRIMARY KEY AUTO_INCREMENT,
+    account_id INT,
+    cheque_number VARCHAR(20),
+    issue_date DATE,
+    amount DECIMAL(12,2),
+    status VARCHAR(20) DEFAULT 'Pending',
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id)
+);
 
--- ---------------- LEVEL 4: SUBQUERIES / CTE  ----------------
+-- 15. Nominees
+CREATE TABLE Nominees (
+    nominee_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT,
+    nominee_name VARCHAR(100),
+    relation VARCHAR(50),
+    dob DATE,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+);
 
--- Q16 [SUBQUERY] Accounts with balance above the average balance
-SELECT account_number, balance FROM accounts WHERE balance > (SELECT AVG(balance) FROM accounts);
+-- ============================================================
+-- SECTION 2: SAMPLE DATA
+-- ============================================================
 
--- Q17 [CORRELATED SUBQUERY] Customers with more than one account
-SELECT first_name FROM customers c WHERE (SELECT COUNT(*) FROM accounts a WHERE a.customer_id = c.customer_id) > 1;
+INSERT INTO Branches (branch_name, branch_city, ifsc_code) VALUES
+('Anna Nagar Branch','Chennai','BANK0001'),
+('T Nagar Branch','Chennai','BANK0002'),
+('Andheri Branch','Mumbai','BANK0003'),
+('Koramangala Branch','Bangalore','BANK0004'),
+('Salt Lake Branch','Kolkata','BANK0005');
 
--- Q18 [CTE] Total deposit per customer using a CTE
-WITH deposits AS (SELECT customer_id, SUM(balance) AS total FROM accounts GROUP BY customer_id)
-SELECT * FROM deposits WHERE total > 50000;
+INSERT INTO Departments (department_name) VALUES
+('Loans'),('Customer Service'),('Operations'),('IT'),('HR');
 
--- ---------------- LEVEL 5: VIEWS  ----------------
+INSERT INTO Employees (emp_name, department_id, branch_id, designation, salary, hire_date) VALUES
+('Arun Kumar',1,1,'Loan Officer',45000,'2019-05-10'),
+('Divya Shree',2,1,'Teller',30000,'2020-01-15'),
+('Rahul Mehta',3,3,'Operations Manager',60000,'2018-03-20'),
+('Priya Singh',4,4,'IT Support',40000,'2021-07-01'),
+('Kavitha Rao',2,2,'Customer Rep',32000,'2020-11-11'),
+('Suresh Babu',1,3,'Loan Officer',47000,'2017-09-09'),
+('Anitha Menon',5,4,'HR Executive',38000,'2022-02-14');
 
--- Q19 [VIEW USAGE] Customer account summary view
-SELECT * FROM vw_customer_account_summary WHERE balance > 50000;
+INSERT INTO Customers (cust_name, dob, gender, phone, email, address, city, branch_id) VALUES
+('Ramesh Iyer','1985-04-12','Male','9876543210','ramesh@mail.com','12 Gandhi St','Chennai',1),
+('Sneha Patil','1990-08-25','Female','9876543211','sneha@mail.com','45 MG Road','Mumbai',3),
+('Vikram Rao','1978-11-02','Male','9876543212','vikram@mail.com','7 Park Ave','Bangalore',4),
+('Lakshmi Narayanan','1995-01-30','Female','9876543213','lakshmi@mail.com','9 Lake View','Kolkata',5),
+('Arjun Das','1988-06-18','Male','9876543214','arjun@mail.com','23 Church St','Chennai',2),
+('Meera Nair','1992-09-09','Female','9876543215','meera@mail.com','56 Hill Road','Mumbai',3),
+('Kiran Kumar','1983-03-03','Male','9876543216','kiran@mail.com','3 Lake Town','Kolkata',5),
+('Divya Bharathi','1997-12-20','Female','9876543217','divyab@mail.com','88 Anna Salai','Chennai',1);
 
--- Q20 [VIEW USAGE] Active loans summary view
-SELECT * FROM vw_active_loans_summary;
+INSERT INTO AccountTypes (type_name, interest_rate, min_balance) VALUES
+('Savings',3.5,1000),
+('Current',0,5000),
+('Salary',4.0,0);
 
--- ---------------- LEVEL 6: STORED PROCEDURES ----------------
+INSERT INTO Accounts (customer_id, branch_id, account_type_id, account_number, balance, open_date, status) VALUES
+(1,1,1,'AC1001',125000,'2019-06-01','Active'),
+(2,3,1,'AC1002',85000,'2020-02-10','Active'),
+(3,4,2,'AC1003',560000,'2018-04-15','Active'),
+(4,5,1,'AC1004',32000,'2021-01-20','Active'),
+(5,2,3,'AC1005',48000,'2019-09-05','Active'),
+(6,3,1,'AC1006',15000,'2022-03-11','Active'),
+(7,5,2,'AC1007',210000,'2017-10-25','Active'),
+(8,1,1,'AC1008',9000,'2022-06-30','Frozen');
 
--- Q21 [STORED PROCEDURE] Customer statement for customer_id = 1
-CALL sp_get_customer_statement(1);
+INSERT INTO Transactions (account_id, transaction_type, amount, transaction_date, description) VALUES
+(1,'Deposit',20000,'2024-01-05 10:00:00','Salary credit'),
+(1,'Withdrawal',5000,'2024-01-10 15:30:00','ATM withdrawal'),
+(2,'Deposit',10000,'2024-01-07 09:00:00','Cash deposit'),
+(3,'Withdrawal',50000,'2024-02-01 12:00:00','Business payment'),
+(3,'Deposit',100000,'2024-02-15 11:00:00','Client payment'),
+(4,'Deposit',5000,'2024-01-20 14:00:00','Cash deposit'),
+(5,'Withdrawal',3000,'2024-02-05 16:00:00','Online purchase'),
+(6,'Deposit',2000,'2024-01-25 10:15:00','Cash deposit'),
+(7,'Withdrawal',20000,'2024-02-10 13:00:00','Rent payment'),
+(8,'Deposit',1000,'2024-01-30 09:30:00','Cash deposit'),
+(1,'Withdrawal',8000,'2024-02-20 17:00:00','Utility bill'),
+(3,'Withdrawal',25000,'2024-03-01 12:30:00','Vendor payment');
 
--- Q22 [STORED PROCEDURE] Outstanding amount for loan_id = 5
-CALL sp_loan_outstanding(5, @outstanding);
-SELECT @outstanding;
+INSERT INTO Cards (account_id, card_number, card_type, expiry_date, card_status) VALUES
+(1,'4111000000001001','Debit','2027-06-30','Active'),
+(2,'4111000000001002','Debit','2026-02-28','Active'),
+(3,'5500000000001003','Credit','2028-04-30','Active'),
+(4,'4111000000001004','Debit','2025-01-31','Expired'),
+(5,'5500000000001005','Credit','2027-09-30','Active'),
+(7,'4111000000001007','Debit','2026-10-31','Active');
 
-------------------- LEVEL 7: WINDOW FUNCTIONS - ADVANCED ----------------
+INSERT INTO LoanTypes (loan_name, interest_rate) VALUES
+('Home Loan',7.5),('Personal Loan',11.0),('Car Loan',9.0),('Education Loan',8.0);
 
--- Q23 [WINDOW FUNCTION] Rank accounts by balance within each branch
-SELECT branch_id, account_number, balance, RANK() OVER (PARTITION BY branch_id ORDER BY balance DESC) AS rnk FROM accounts;
+INSERT INTO Loans (customer_id, loan_type_id, branch_id, loan_amount, issue_date, tenure_months, status) VALUES
+(1,1,1,2500000,'2020-05-01',240,'Active'),
+(2,3,3,800000,'2021-03-15',60,'Active'),
+(3,2,4,300000,'2022-01-10',24,'Closed'),
+(4,4,5,500000,'2019-08-20',48,'Active'),
+(6,3,3,600000,'2023-02-01',36,'Active'),
+(7,1,5,1800000,'2018-11-05',180,'Active');
 
--- Q24 [WINDOW FUNCTION] Running total of transaction amounts per account
-SELECT account_id, amount, SUM(amount) OVER (PARTITION BY account_id ORDER BY transaction_date) AS running_total FROM transactions;
+INSERT INTO LoanPayments (loan_id, payment_date, amount_paid) VALUES
+(1,'2024-01-05',25000),
+(1,'2024-02-05',25000),
+(2,'2024-01-10',15000),
+(2,'2024-02-10',15000),
+(3,'2022-06-10',14000),
+(4,'2024-01-20',12000),
+(5,'2024-02-15',18000),
+(6,'2024-01-25',20000);
 
--- Q25 [WINDOW FUNCTION] Row number of loans ordered by amount per loan type
-SELECT loan_type_id, principal_amount, ROW_NUMBER() OVER (PARTITION BY loan_type_id ORDER BY principal_amount DESC) AS rnk FROM loans;
+INSERT INTO FixedDeposits (customer_id, account_id, amount, start_date, maturity_date, interest_rate) VALUES
+(1,1,100000,'2023-01-01','2025-01-01',6.5),
+(3,3,300000,'2022-06-01','2024-06-01',7.0),
+(5,5,50000,'2023-09-01','2024-09-01',6.0),
+(7,7,150000,'2021-01-01','2026-01-01',7.2);
+
+INSERT INTO Beneficiaries (customer_id, beneficiary_name, beneficiary_account_number, bank_name) VALUES
+(1,'Suresh Iyer','AC9001','HDFC Bank'),
+(2,'Anil Patil','AC9002','ICICI Bank'),
+(3,'Ganesh Rao','AC9003','SBI'),
+(5,'Radha Das','AC9004','Axis Bank');
+
+INSERT INTO Cheques (account_id, cheque_number, issue_date, amount, status) VALUES
+(1,'CHQ0001','2024-01-15',15000,'Cleared'),
+(3,'CHQ0002','2024-02-01',40000,'Cleared'),
+(4,'CHQ0003','2024-01-22',5000,'Pending'),
+(7,'CHQ0004','2024-02-05',12000,'Bounced');
+
+INSERT INTO Nominees (customer_id, nominee_name, relation, dob) VALUES
+(1,'Geetha Iyer','Spouse','1987-03-14'),
+(2,'Anil Patil','Father','1960-07-22'),
+(3,'Sunita Rao','Spouse','1980-05-19'),
+(4,'Ravi Narayanan','Brother','1993-02-11'),
+(5,'Radha Das','Mother','1958-12-01');
+
+-- ============================================================
+-- SECTION 3: QUERIES (14 TOPICS x 5 QUERIES = 70 QUERIES)
+-- ============================================================
+
+-- ----------------------------------------------------------
+-- TOPIC 1: BASIC SELECT & WHERE
+-- ----------------------------------------------------------
+-- 1.1 List all customers from Chennai
+SELECT * FROM Customers WHERE city = 'Chennai';
+
+-- 1.2 Find all active accounts
+SELECT * FROM Accounts WHERE status = 'Active';
+
+-- 1.3 Get accounts with balance greater than 100000
+SELECT account_number, balance FROM Accounts WHERE balance > 100000;
+
+-- 1.4 List all female customers
+SELECT cust_name, gender, city FROM Customers WHERE gender = 'Female';
+
+-- 1.5 Find loans with amount between 500000 and 2000000
+SELECT loan_id, customer_id, loan_amount FROM Loans WHERE loan_amount BETWEEN 500000 AND 2000000;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 2: ORDER BY & LIMIT
+-- ----------------------------------------------------------
+-- 2.1 Top 3 customers by account balance
+SELECT c.cust_name, a.balance
+FROM Customers c JOIN Accounts a ON c.customer_id = a.customer_id
+ORDER BY a.balance DESC LIMIT 3;
+
+-- 2.2 List employees by salary ascending
+SELECT emp_name, salary FROM Employees ORDER BY salary ASC;
+
+-- 2.3 Latest 5 transactions
+SELECT * FROM Transactions ORDER BY transaction_date DESC LIMIT 5;
+
+-- 2.4 Loans sorted by issue date (oldest first)
+SELECT loan_id, customer_id, issue_date FROM Loans ORDER BY issue_date ASC;
+
+-- 2.5 Customers sorted alphabetically by name
+SELECT cust_name, city FROM Customers ORDER BY cust_name ASC;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 3: AGGREGATE FUNCTIONS (SUM, AVG, COUNT, MAX, MIN)
+-- ----------------------------------------------------------
+-- 3.1 Total balance held by the bank
+SELECT SUM(balance) AS total_bank_balance FROM Accounts;
+
+-- 3.2 Average loan amount issued
+SELECT AVG(loan_amount) AS average_loan_amount FROM Loans;
+
+-- 3.3 Total number of customers
+SELECT COUNT(*) AS total_customers FROM Customers;
+
+-- 3.4 Highest and lowest account balance
+SELECT MAX(balance) AS highest_balance, MIN(balance) AS lowest_balance FROM Accounts;
+
+-- 3.5 Total amount deposited across all transactions
+SELECT SUM(amount) AS total_deposits FROM Transactions WHERE transaction_type = 'Deposit';
+
+
+-- ----------------------------------------------------------
+-- TOPIC 4: GROUP BY & HAVING
+-- ----------------------------------------------------------
+-- 4.1 Number of accounts per branch
+SELECT branch_id, COUNT(*) AS account_count FROM Accounts GROUP BY branch_id;
+
+-- 4.2 Total loan amount per loan type
+SELECT loan_type_id, SUM(loan_amount) AS total_amount FROM Loans GROUP BY loan_type_id;
+
+-- 4.3 Average balance per account type
+SELECT account_type_id, AVG(balance) AS avg_balance FROM Accounts GROUP BY account_type_id;
+
+-- 4.4 Branches having more than 2 customers
+SELECT branch_id, COUNT(*) AS cust_count FROM Customers
+GROUP BY branch_id HAVING COUNT(*) > 1;
+
+-- 4.5 Customers with total transaction amount above 20000
+SELECT account_id, SUM(amount) AS total_amount FROM Transactions
+GROUP BY account_id HAVING SUM(amount) > 20000;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 5: INNER JOIN
+-- ----------------------------------------------------------
+-- 5.1 Customer names with their account numbers and balances
+SELECT c.cust_name, a.account_number, a.balance
+FROM Customers c INNER JOIN Accounts a ON c.customer_id = a.customer_id;
+
+-- 5.2 Employees with their department and branch names
+SELECT e.emp_name, d.department_name, b.branch_name
+FROM Employees e
+INNER JOIN Departments d ON e.department_id = d.department_id
+INNER JOIN Branches b ON e.branch_id = b.branch_id;
+
+-- 5.3 Loan details with customer names and loan type
+SELECT c.cust_name, lt.loan_name, l.loan_amount, l.status
+FROM Loans l
+INNER JOIN Customers c ON l.customer_id = c.customer_id
+INNER JOIN LoanTypes lt ON l.loan_type_id = lt.loan_type_id;
+
+-- 5.4 Transactions with account number and customer name
+SELECT c.cust_name, a.account_number, t.transaction_type, t.amount
+FROM Transactions t
+INNER JOIN Accounts a ON t.account_id = a.account_id
+INNER JOIN Customers c ON a.customer_id = c.customer_id;
+
+-- 5.5 Card details with account and customer info
+SELECT c.cust_name, a.account_number, cd.card_type, cd.card_status
+FROM Cards cd
+INNER JOIN Accounts a ON cd.account_id = a.account_id
+INNER JOIN Customers c ON a.customer_id = c.customer_id;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 6: LEFT JOIN
+-- ----------------------------------------------------------
+-- 6.1 All customers with their loans (including customers with no loans)
+SELECT c.cust_name, l.loan_id, l.loan_amount
+FROM Customers c LEFT JOIN Loans l ON c.customer_id = l.customer_id;
+
+-- 6.2 All accounts with cards (including accounts without a card)
+SELECT a.account_number, cd.card_type, cd.card_status
+FROM Accounts a LEFT JOIN Cards cd ON a.account_id = cd.account_id;
+
+-- 6.3 All customers with their fixed deposits (including those without FDs)
+SELECT c.cust_name, fd.amount, fd.maturity_date
+FROM Customers c LEFT JOIN FixedDeposits fd ON c.customer_id = fd.customer_id;
+
+-- 6.4 All customers with their nominees (including those without a nominee)
+SELECT c.cust_name, n.nominee_name, n.relation
+FROM Customers c LEFT JOIN Nominees n ON c.customer_id = n.customer_id;
+
+-- 6.5 All accounts with cheque records (including accounts with no cheques)
+SELECT a.account_number, ch.cheque_number, ch.status
+FROM Accounts a LEFT JOIN Cheques ch ON a.account_id = ch.account_id;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 7: SUBQUERIES
+-- ----------------------------------------------------------
+-- 7.1 Customers whose balance is above the average balance
+SELECT cust_name FROM Customers
+WHERE customer_id IN (
+    SELECT customer_id FROM Accounts WHERE balance > (SELECT AVG(balance) FROM Accounts)
+);
+
+-- 7.2 Employees earning more than the average salary
+SELECT emp_name, salary FROM Employees
+WHERE salary > (SELECT AVG(salary) FROM Employees);
+
+-- 7.3 Customers who have taken the highest loan amount
+SELECT cust_name FROM Customers
+WHERE customer_id = (SELECT customer_id FROM Loans ORDER BY loan_amount DESC LIMIT 1);
+
+-- 7.4 Accounts that have never had a transaction
+SELECT account_number FROM Accounts
+WHERE account_id NOT IN (SELECT DISTINCT account_id FROM Transactions);
+
+-- 7.5 Branches that have issued more than one loan
+SELECT branch_name FROM Branches
+WHERE branch_id IN (
+    SELECT branch_id FROM Loans GROUP BY branch_id HAVING COUNT(*) > 1
+);
+
+
+-- ----------------------------------------------------------
+-- TOPIC 8: STRING FUNCTIONS
+-- ----------------------------------------------------------
+-- 8.1 Display customer names in uppercase
+SELECT UPPER(cust_name) AS name_upper FROM Customers;
+
+-- 8.2 Extract first 4 digits of account numbers
+SELECT account_number, SUBSTRING(account_number,1,4) AS prefix FROM Accounts;
+
+-- 8.3 Concatenate customer name with city
+SELECT CONCAT(cust_name, ' - ', city) AS customer_info FROM Customers;
+
+-- 8.4 Length of each customer's email address
+SELECT cust_name, LENGTH(email) AS email_length FROM Customers;
+
+-- 8.5 Customers whose name starts with 'A'
+SELECT cust_name FROM Customers WHERE cust_name LIKE 'A%';
+
+
+-- ----------------------------------------------------------
+-- TOPIC 9: DATE FUNCTIONS
+-- ----------------------------------------------------------
+-- 9.1 Customer age calculated from date of birth
+SELECT cust_name, dob, TIMESTAMPDIFF(YEAR, dob, CURDATE()) AS age FROM Customers;
+
+-- 9.2 Loans issued in the year 2020
+SELECT loan_id, customer_id, issue_date FROM Loans WHERE YEAR(issue_date) = 2020;
+
+-- 9.3 Number of months remaining for FD maturity
+SELECT fd_id, TIMESTAMPDIFF(MONTH, CURDATE(), maturity_date) AS months_remaining FROM FixedDeposits;
+
+-- 9.4 Transactions made in January 2024
+SELECT * FROM Transactions
+WHERE transaction_date BETWEEN '2024-01-01' AND '2024-01-31';
+
+-- 9.5 Employees who joined in the last 5 years
+SELECT emp_name, hire_date FROM Employees
+WHERE hire_date >= DATE_SUB(CURDATE(), INTERVAL 5 YEAR);
+
+
+-- ----------------------------------------------------------
+-- TOPIC 10: VIEWS
+-- ----------------------------------------------------------
+-- 10.1 View for customer account summary
+CREATE OR REPLACE VIEW vw_customer_account_summary AS
+SELECT c.customer_id, c.cust_name, a.account_number, a.balance, b.branch_name
+FROM Customers c
+JOIN Accounts a ON c.customer_id = a.customer_id
+JOIN Branches b ON a.branch_id = b.branch_id;
+SELECT * FROM vw_customer_account_summary;
+
+-- 10.2 View for active loans
+CREATE OR REPLACE VIEW vw_active_loans AS
+SELECT l.loan_id, c.cust_name, lt.loan_name, l.loan_amount, l.status
+FROM Loans l
+JOIN Customers c ON l.customer_id = c.customer_id
+JOIN LoanTypes lt ON l.loan_type_id = lt.loan_type_id
+WHERE l.status = 'Active';
+SELECT * FROM vw_active_loans;
+
+-- 10.3 View for branch-wise total deposits
+CREATE OR REPLACE VIEW vw_branch_deposits AS
+SELECT b.branch_name, SUM(a.balance) AS total_deposits
+FROM Branches b JOIN Accounts a ON b.branch_id = a.branch_id
+GROUP BY b.branch_name;
+SELECT * FROM vw_branch_deposits;
+
+-- 10.4 View for employee details with department and branch
+CREATE OR REPLACE VIEW vw_employee_details AS
+SELECT e.emp_name, d.department_name, b.branch_name, e.salary
+FROM Employees e
+JOIN Departments d ON e.department_id = d.department_id
+JOIN Branches b ON e.branch_id = b.branch_id;
+SELECT * FROM vw_employee_details;
+
+-- 10.5 View for high-value customers (balance above 100000)
+CREATE OR REPLACE VIEW vw_high_value_customers AS
+SELECT c.cust_name, a.balance
+FROM Customers c JOIN Accounts a ON c.customer_id = a.customer_id
+WHERE a.balance > 100000;
+SELECT * FROM vw_high_value_customers;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 11: STORED PROCEDURES
+-- ----------------------------------------------------------
+DELIMITER $$
+
+-- 11.1 Procedure to get all accounts of a given customer
+CREATE PROCEDURE GetCustomerAccounts(IN p_customer_id INT)
+BEGIN
+    SELECT * FROM Accounts WHERE customer_id = p_customer_id;
+END$$
+
+-- 11.2 Procedure to deposit money into an account
+CREATE PROCEDURE DepositAmount(IN p_account_id INT, IN p_amount DECIMAL(12,2))
+BEGIN
+    UPDATE Accounts SET balance = balance + p_amount WHERE account_id = p_account_id;
+    INSERT INTO Transactions(account_id, transaction_type, amount, transaction_date, description)
+    VALUES (p_account_id, 'Deposit', p_amount, NOW(), 'Deposit via procedure');
+END$$
+
+-- 11.3 Procedure to withdraw money from an account (checks balance first)
+CREATE PROCEDURE WithdrawAmount(IN p_account_id INT, IN p_amount DECIMAL(12,2))
+BEGIN
+    DECLARE current_balance DECIMAL(12,2);
+    SELECT balance INTO current_balance FROM Accounts WHERE account_id = p_account_id;
+    IF current_balance >= p_amount THEN
+        UPDATE Accounts SET balance = balance - p_amount WHERE account_id = p_account_id;
+        INSERT INTO Transactions(account_id, transaction_type, amount, transaction_date, description)
+        VALUES (p_account_id, 'Withdrawal', p_amount, NOW(), 'Withdrawal via procedure');
+    ELSE
+        SELECT 'Insufficient balance' AS message;
+    END IF;
+END$$
+
+-- 11.4 Procedure to get total loan amount for a customer
+CREATE PROCEDURE GetCustomerLoanTotal(IN p_customer_id INT)
+BEGIN
+    SELECT customer_id, SUM(loan_amount) AS total_loans
+    FROM Loans WHERE customer_id = p_customer_id
+    GROUP BY customer_id;
+END$$
+
+-- 11.5 Procedure to close an account
+CREATE PROCEDURE CloseAccount(IN p_account_id INT)
+BEGIN
+    UPDATE Accounts SET status = 'Closed' WHERE account_id = p_account_id;
+END$$
+
+DELIMITER ;
+
+-- Example calls:
+-- CALL GetCustomerAccounts(1);
+-- CALL DepositAmount(1, 5000);
+-- CALL WithdrawAmount(1, 2000);
+-- CALL GetCustomerLoanTotal(1);
+-- CALL CloseAccount(8);
+
+
+-- ----------------------------------------------------------
+-- TOPIC 12: TRIGGERS
+-- ----------------------------------------------------------
+DELIMITER $$
+
+-- 12.1 Trigger to prevent negative balance on withdrawal update
+CREATE TRIGGER trg_prevent_negative_balance
+BEFORE UPDATE ON Accounts
+FOR EACH ROW
+BEGIN
+    IF NEW.balance < 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Balance cannot be negative';
+    END IF;
+END$$
+
+-- 12.2 Trigger to log every new account creation into Transactions as an opening entry
+CREATE TRIGGER trg_account_open_log
+AFTER INSERT ON Accounts
+FOR EACH ROW
+BEGIN
+    INSERT INTO Transactions(account_id, transaction_type, amount, transaction_date, description)
+    VALUES (NEW.account_id, 'Deposit', NEW.balance, NOW(), 'Account opening balance');
+END$$
+
+-- 12.3 Trigger to auto-update card status to Expired based on expiry date on insert
+CREATE TRIGGER trg_card_expiry_check
+BEFORE INSERT ON Cards
+FOR EACH ROW
+BEGIN
+    IF NEW.expiry_date < CURDATE() THEN
+        SET NEW.card_status = 'Expired';
+    END IF;
+END$$
+
+-- 12.4 Trigger to prevent deleting a customer who has active loans
+CREATE TRIGGER trg_prevent_customer_delete
+BEFORE DELETE ON Customers
+FOR EACH ROW
+BEGIN
+    IF (SELECT COUNT(*) FROM Loans WHERE customer_id = OLD.customer_id AND status = 'Active') > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete customer with active loans';
+    END IF;
+END$$
+
+-- 12.5 Trigger to timestamp loan closure automatically (loans marked Closed get a payment record note)
+CREATE TRIGGER trg_loan_closure_note
+AFTER UPDATE ON Loans
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Closed' AND OLD.status <> 'Closed' THEN
+        INSERT INTO LoanPayments(loan_id, payment_date, amount_paid)
+        VALUES (NEW.loan_id, CURDATE(), 0);
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 13: WINDOW FUNCTIONS
+-- ----------------------------------------------------------
+-- 13.1 Rank customers by account balance
+SELECT c.cust_name, a.balance,
+       RANK() OVER (ORDER BY a.balance DESC) AS balance_rank
+FROM Customers c JOIN Accounts a ON c.customer_id = a.customer_id;
+
+-- 13.2 Running total of deposits per account ordered by date
+SELECT account_id, transaction_date, amount,
+       SUM(amount) OVER (PARTITION BY account_id ORDER BY transaction_date) AS running_total
+FROM Transactions WHERE transaction_type = 'Deposit';
+
+-- 13.3 Row number of loans per branch ordered by loan amount
+SELECT branch_id, loan_id, loan_amount,
+       ROW_NUMBER() OVER (PARTITION BY branch_id ORDER BY loan_amount DESC) AS row_num
+FROM Loans;
+
+-- 13.4 Average balance per account type shown alongside each account (window)
+SELECT account_number, account_type_id, balance,
+       AVG(balance) OVER (PARTITION BY account_type_id) AS type_avg_balance
+FROM Accounts;
+
+-- 13.5 Dense rank of employees by salary within each department
+SELECT emp_name, department_id, salary,
+       DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS salary_rank
+FROM Employees;
+
+
+-- ----------------------------------------------------------
+-- TOPIC 14: SET OPERATIONS & CASE STATEMENTS
+-- ----------------------------------------------------------
+-- 14.1 List of all customer and employee names combined (UNION)
+SELECT cust_name AS person_name, 'Customer' AS role FROM Customers
+UNION
+SELECT emp_name AS person_name, 'Employee' AS role FROM Employees;
+
+-- 14.2 Cities that have both customers and branches (UNION to combine, then check via city match manually)
+SELECT DISTINCT city FROM Customers
+UNION
+SELECT DISTINCT branch_city FROM Branches;
+
+-- 14.3 Categorize accounts by balance range using CASE
+SELECT account_number, balance,
+    CASE
+        WHEN balance >= 200000 THEN 'High Value'
+        WHEN balance >= 50000 THEN 'Medium Value'
+        ELSE 'Low Value'
+    END AS balance_category
+FROM Accounts;
+
+-- 14.4 Categorize loans as Short/Medium/Long term using CASE
+SELECT loan_id, tenure_months,
+    CASE
+        WHEN tenure_months <= 24 THEN 'Short Term'
+        WHEN tenure_months <= 60 THEN 'Medium Term'
+        ELSE 'Long Term'
+    END AS loan_term_category
+FROM Loans;
+
+-- 14.5 UNION ALL of all deposit and withdrawal transaction counts
+SELECT 'Deposit' AS type, COUNT(*) AS total FROM Transactions WHERE transaction_type = 'Deposit'
+UNION ALL
+SELECT 'Withdrawal' AS type, COUNT(*) AS total FROM Transactions WHERE transaction_type = 'Withdrawal';
+
+-- ============================================================
+-- END OF PROJECT — 15 TABLES, 70 QUERIES ACROSS 14 TOPICS
+-- ============================================================
